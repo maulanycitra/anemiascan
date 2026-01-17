@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AnemiaScan - Deteksi Anemia via Telapak Tangan</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+        }
+       .drop-zone {
+            border: 2px dashed #cbd5e1; /* slate-300 */
+            transition: all 0.2s ease-in-out;
+        }
+       .drop-zone.dragover {
+            border-color: #15e10e; /* teal-600 */
+            background-color: #f0fdfa; /* teal-50 */
+        }
+       .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #14b8a6; /* teal-500 */
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <div class="min-h-screen flex flex-col items-center justify-center p-4">
+        <div class="w-full max-w-2xl mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden">
+            <div class="p-8">
+                <div class="text-center">
+                    <h1 class="text-3xl font-bold text-teal-700">AnemiaScan</h1>
+                    <p class="mt-2 text-slate-600 font-semibold">Deteksi Anemia via Analisis Telapak Tangan</p>
+                </div>
+
+                <div id="uploader" class="mt-8">
+                    <label for="file-upload" class="drop-zone w-full p-12 text-center rounded-lg cursor-pointer hover:bg-slate-50">
+                        <div class="flex flex-col items-center justify-center">
+                            <svg class="w-20 h-20 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-4-4V7a4 4 0 014-4h10a4 4 0 014 4v5a4 4 0 01-4 4H7z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 9l-3 3m0 0l-3-3m3 3V5"></path>
+                            </svg>
+                            <p class="mt-4 text-lg font-semibold text-slate-700">Unggah foto telapak tangan Anda</p>
+                            <p class="text-sm text-slate-500">PNG, JPG, atau JPEG</p>
+                        </div>
+                    </label>
+                    <input id="file-upload" type="file" class="hidden" accept="image/png, image/jpeg, image/jpg">
+                </div>
+
+                <div id="preview-container" class="hidden mt-6 text-center">
+                    <img id="image-preview" class="max-h-80 w-auto mx-auto rounded-lg shadow-md" alt="Pratinjau Gambar">
+                    <button id="analyze-btn" class="mt-6 w-full px-6 py-3 bg-teal-600 text-white font-semibold rounded-lg shadow-md hover:bg-teal-700 transition-colors duration-300">
+                        Analisis untuk Anemia
+                    </button>
+                </div>
+
+                <div id="loading-container" class="hidden mt-8 flex flex-col items-center justify-center h-48">
+                    <div class="loader"></div>
+                    <p id="loading-text" class="mt-4 text-slate-600 text-center w-full"></p>
+                </div>
+
+                <div id="result-container" class="hidden mt-8">
+                    <h2 class="text-2xl font-bold text-slate-800 text-center">Hasil Analisis</h2>
+                    
+                    <div class="mt-4 text-left p-4 bg-red-50 border-l-4 border-red-500 rounded-r-lg">
+                        <p class="text-sm text-red-800">
+                            <span class="font-bold">PERHATIAN:</span> Ini adalah prototipe fungsional. Hasil di bawah ini adalah <span class="font-bold">simulasi realistis</span> dari model ensemble hibrida dan <span class="font-bold">BUKAN DIAGNOSIS MEDIS</span>.
+                        </p>
+                    </div>
+
+                    <!-- HASIL UTAMA (ENSEMBLE) -->
+                    <div id="ensemble-verdict" class="mt-4 p-4 bg-slate-50 rounded-lg border">
+                        <h3 class="font-semibold text-slate-800 mb-2">Hasil Akhir (Putusan Ensemble):</h3>
+                        <div class="bg-teal-100 p-4 rounded-lg">
+                            <div class="flex justify-between items-center">
+                                <span id="top-class-name" class="text-xl font-bold text-teal-800"></span>
+                                <span id="top-class-prob" class="text-xl font-semibold text-teal-700"></span>
+                            </div>
+                            <p id="top-class-description" class="mt-2 text-teal-900 text-sm"></p>
+                        </div>
+                    </div>
+
+                    <!-- Rincian Analisis Model Hibrida -->
+                    <div id="model-breakdown" class="mt-4">
+                        <h3 class="font-semibold text-slate-800 mb-2 text-center">Rincian Analisis Model Hibrida</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <!-- Model A -->
+                            <div class="bg-slate-100 p-3 rounded-lg border">
+                                <h4 class="font-bold text-center text-slate-700">Model A (ResNet)</h4>
+                                <ul id="model-a-results" class="mt-2 space-y-1 text-sm">
+                                    <!-- diisi JS -->
+                                </ul>
+                            </div>
+                            <!-- Model B -->
+                            <div class="bg-slate-100 p-3 rounded-lg border">
+                                <h4 class="font-bold text-center text-slate-700">Model B (EfficientNet)</h4>
+                                <ul id="model-b-results" class="mt-2 space-y-1 text-sm">
+                                    <!-- diisi JS -->
+                                </ul>
+                            </div>
+                            <!-- Model C -->
+                            <div class="bg-slate-100 p-3 rounded-lg border">
+                                <h4 class="font-bold text-center text-slate-700">Model C (ViT)</h4>
+                                <ul id="model-c-results" class="mt-2 space-y-1 text-sm">
+                                    <!-- diisi JS -->
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button id="reset-btn" class="mt-6 w-full px-6 py-3 bg-slate-600 text-white font-semibold rounded-lg shadow-md hover:bg-slate-700 transition-colors duration-300">
+                        Analisis Gambar Lain
+                    </button>
+                </div>
+            </div>
+        </div>
+        <footer class="text-center mt-8 text-slate-500 text-sm">
+            <p>&copy; 2025 Anemiascan</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const uploader = document.getElementById('uploader');
+            const fileInput = document.getElementById('file-upload');
+            const dropZone = uploader.querySelector('label');
+            
+            const previewContainer = document.getElementById('preview-container');
+            const imagePreview = document.getElementById('image-preview');
+            const analyzeBtn = document.getElementById('analyze-btn');
+
+            const loadingContainer = document.getElementById('loading-container');
+            const loadingText = document.getElementById('loading-text');
+            const resultContainer = document.getElementById('result-container');
+            const resetBtn = document.getElementById('reset-btn');
+
+            // Kontainer Hasil Utama
+            const topClassName = document.getElementById('top-class-name');
+            const topClassProb = document.getElementById('top-class-prob');
+            const topClassDescription = document.getElementById('top-class-description');
+
+            // Kontainer Rincian Model
+            const modelAResults = document.getElementById('model-a-results');
+            const modelBResults = document.getElementById('model-b-results');
+            const modelCResults = document.getElementById('model-c-results');
+
+            let currentFile = null;
+
+            // Database simulasi untuk deteksi anemia
+            const anemiaClassData = {
+                'Anemic': {
+                    description: 'Telapak tangan menunjukkan tanda-tanda anemia, Disarankan untuk konsultasi medis lebih lanjut.'
+                },
+                'Non-Anemic': {
+                    description: 'Telapak tangan tidak menunjukkan tanda-tanda anemia.'
+                }
+            };
+            
+            const classNames = Object.keys(anemiaClassData);
+
+            function handleFile(file) {
+                if (file && file.type.startsWith('image/')) {
+                    currentFile = file; 
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        imagePreview.src = e.target.result;
+                        uploader.classList.add('hidden');
+                        previewContainer.classList.remove('hidden');
+                        resultContainer.classList.add('hidden');
+                    };
+                    reader.readAsDataURL(file);
+                }
+            }
+
+            fileInput.addEventListener('change', (e) => {
+                handleFile(e.target.files[0]);
+            });
+
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('dragover');
+            });
+
+            dropZone.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('dragover');
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('dragover');
+                handleFile(e.dataTransfer.files[0]);
+            });
+
+            analyzeBtn.addEventListener('click', () => {
+                previewContainer.classList.add('hidden');
+                loadingContainer.classList.remove('hidden');
+                
+                loadingText.textContent = 'Menganalisis (Model A: ResNet)...';
+                
+                setTimeout(() => {
+                    loadingText.textContent = 'Menganalisis (Model B: EfficientNet)...';
+                }, 1000);
+                
+                setTimeout(() => {
+                    loadingText.textContent = 'Menganalisis (Model C: ViT)...';
+                }, 2000);
+
+                setTimeout(() => {
+                    loadingText.textContent = 'Menggabungkan hasil (Ensemble)...';
+                }, 3000);
+
+                setTimeout(() => {
+                    const predictions = simulateHybridResults(currentFile);
+                    displayResults(predictions);
+                }, 3500);
+            });
+            
+            // Fungsi seed acak yang konsisten
+            function seededRandom(seed) {
+                let s = Math.sin(seed) * 10000;
+                return s - Math.floor(s);
+            }
+
+            // Fungsi untuk menghasilkan hasil simulasi hibrida yang KONSISTEN
+            function simulateHybridResults(file) {
+                let results = {};
+                const fileSize = file.size;
+                
+                // 1. Tentukan hasil ENSEMBLE
+                const ensembleTopIndex = fileSize % 2; // 0 = Non-Anemic, 1 = Anemic
+                let ensembleTopProb = seededRandom(fileSize % 100) * (0.98 - 0.85) + 0.85;
+                results.ensemble = generatePredictionList(ensembleTopIndex, ensembleTopProb, fileSize + 1);
+                
+                // 2. Model A
+                let modelAProb = ensembleTopProb * (seededRandom(fileSize + 2) * (1.0 - 0.9) + 0.9);
+                results.modelA = generatePredictionList(ensembleTopIndex, modelAProb, fileSize + 2);
+                
+                // 3. Model B
+                let modelBProb = ensembleTopProb * (seededRandom(fileSize + 3) * (1.0 - 0.88) + 0.88);
+                results.modelB = generatePredictionList(ensembleTopIndex, modelBProb, fileSize + 3);
+
+                // 4. Model C (kadang salah)
+                let modelCSeed = seededRandom(fileSize + 4);
+                let modelCTopIndex = ensembleTopIndex;
+                let modelCProb = ensembleTopProb * 0.7;
+                if (modelCSeed < 0.3) {
+                    modelCTopIndex = 1 - ensembleTopIndex; // flip
+                    modelCProb = seededRandom(fileSize + 5) * (0.6 - 0.4) + 0.4;
+                }
+                results.modelC = generatePredictionList(modelCTopIndex, modelCProb, fileSize + 4);
+
+                return results;
+            }
+
+            function generatePredictionList(topIndex, topProb, seed) {
+                let list = [];
+                let remainingProb = 1.0 - topProb;
+                for (let i = 0; i < 2; i++) {
+                    let prob = (i === topIndex) ? topProb : remainingProb;
+                    list.push({ className: classNames[i], probability: prob });
+                }
+                list.sort((a, b) => b.probability - a.probability);
+                return list;
+            }
+
+            function displayResults(predictions) {
+                const topPrediction = predictions.ensemble[0];
+                topClassName.textContent = topPrediction.className;
+                topClassProb.textContent = `${(topPrediction.probability * 100).toFixed(2)}%`;
+                topClassDescription.textContent = anemiaClassData[topPrediction.className].description;
+
+                displayModelBreakdown(modelAResults, predictions.modelA);
+                displayModelBreakdown(modelBResults, predictions.modelB);
+                displayModelBreakdown(modelCResults, predictions.modelC);
+
+                loadingContainer.classList.add('hidden');
+                resultContainer.classList.remove('hidden');
+            }
+
+            function displayModelBreakdown(ulElement, modelPredictions) {
+                ulElement.innerHTML = '';
+                modelPredictions.forEach((pred, index) => {
+                    const li = document.createElement('li');
+                    li.className = `flex justify-between ${index === 0 ? 'font-bold text-slate-900' : 'text-slate-600'}`;
+                    li.innerHTML = `
+                        <span>${pred.className}</span>
+                        <span>(${(pred.probability * 100).toFixed(1)}%)</span>
+                    `;
+                    ulElement.appendChild(li);
+                });
+            }
+
+            resetBtn.addEventListener('click', () => {
+                resultContainer.classList.add('hidden');
+                uploader.classList.remove('hidden');
+                fileInput.value = '';
+                imagePreview.src = '';
+                currentFile = null;
+            });
+
+        });
+    </script>
+</body>
+</html>
