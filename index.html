@@ -3,316 +3,212 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AnemiaScan - Deteksi Anemia via Telapak Tangan</title>
+    <title>AnemiaScan - AI Medical Project</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f8fafc; /* slate-50 */
-        }
-       .drop-zone {
-            border: 2px dashed #cbd5e1; /* slate-300 */
-            transition: all 0.2s ease-in-out;
-        }
-       .drop-zone.dragover {
-            border-color: #15e10e; /* teal-600 */
-            background-color: #f0fdfa; /* teal-50 */
-        }
-       .loader {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #14b8a6; /* teal-500 */
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f0f4fa; }
+        .app-card { border-radius: 40px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.05); }
+        .btn-sage { background-color: #64968c; transition: all 0.3s ease; }
+        .progress-ring { transition: stroke-dashoffset 0.5s ease; transform: rotate(-90deg); transform-origin: 50% 50%; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #64968c; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .hidden { display: none; }
     </style>
 </head>
-<body class="text-slate-800">
+<body class="min-h-screen flex items-center justify-center p-4 md:p-8">
 
-    <div class="min-h-screen flex flex-col items-center justify-center p-4">
-        <div class="w-full max-w-2xl mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden">
-            <div class="p-8">
-                <div class="text-center">
-                    <h1 class="text-3xl font-bold text-teal-700">AnemiaScan</h1>
-                    <p class="mt-2 text-slate-600 font-semibold">Deteksi Anemia via Analisis Telapak Tangan</p>
+    <div class="w-full max-w-4xl mx-auto">
+        <header class="text-center mb-10">
+            <h1 class="text-4xl font-extrabold text-slate-900 tracking-tight">Anemia<span class="text-emerald-600">Scan</span></h1>
+            <p class="text-slate-500 font-medium mt-2 uppercase tracking-widest text-xs">Medical AI Analysis Project</p>
+        </header>
+
+        <div class="w-full bg-white app-card p-6 md:p-10 min-h-[550px] flex flex-col relative overflow-hidden">
+            
+            <div id="screen-upload" class="flex-1 flex flex-col">
+                <div class="flex items-center mb-8">
+                    <button class="text-gray-400 text-2xl">←</button>
+                    <h2 class="flex-1 text-center text-xl font-bold text-slate-700 mr-6">Unggah Sampel</h2>
                 </div>
 
-                <div id="uploader" class="mt-8">
-                    <label for="file-upload" class="drop-zone w-full p-12 text-center rounded-lg cursor-pointer hover:bg-slate-50">
-                        <div class="flex flex-col items-center justify-center">
-                            <svg class="w-20 h-20 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-4-4V7a4 4 0 014-4h10a4 4 0 014 4v5a4 4 0 01-4 4H7z"></path>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 9l-3 3m0 0l-3-3m3 3V5"></path>
-                            </svg>
-                            <p class="mt-4 text-lg font-semibold text-slate-700">Unggah foto telapak tangan Anda</p>
-                            <p class="text-sm text-slate-500">PNG, JPG, atau JPEG</p>
-                        </div>
+                <div id="camera-container" class="hidden relative w-full max-w-sm mx-auto mb-6 rounded-3xl overflow-hidden border-4 border-slate-100">
+                    <video id="video" width="100%" autoplay playsinline class="bg-black"></video>
+                    <button onclick="takeSnapshot()" class="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white p-4 rounded-full shadow-xl">📸</button>
+                </div>
+
+                <div id="upload-options" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8 max-w-lg mx-auto w-full">
+                    <label class="option-box border-2 border-gray-100 p-8 flex flex-col items-center justify-center cursor-pointer hover:bg-blue-50 rounded-3xl transition-all group">
+                        <input type="file" class="hidden" id="input-file" accept="image/*">
+                        <span class="text-4xl mb-3">🖼️</span>
+                        <span class="font-bold text-sm text-slate-600">Pilih Gambar</span>
                     </label>
-                    <input id="file-upload" type="file" class="hidden" accept="image/png, image/jpeg, image/jpg">
-                </div>
-
-                <div id="preview-container" class="hidden mt-6 text-center">
-                    <img id="image-preview" class="max-h-80 w-auto mx-auto rounded-lg shadow-md" alt="Pratinjau Gambar">
-                    <button id="analyze-btn" class="mt-6 w-full px-6 py-3 bg-teal-600 text-white font-semibold rounded-lg shadow-md hover:bg-teal-700 transition-colors duration-300">
-                        Analisis untuk Anemia
+                    <button onclick="startCamera()" class="option-box border-2 border-gray-100 p-8 flex flex-col items-center justify-center cursor-pointer hover:bg-blue-50 rounded-3xl transition-all group">
+                        <span class="text-4xl mb-3">📸</span>
+                        <span class="font-bold text-sm text-slate-600">Gunakan Kamera</span>
                     </button>
                 </div>
 
-                <div id="loading-container" class="hidden mt-8 flex flex-col items-center justify-center h-48">
-                    <div class="loader"></div>
-                    <p id="loading-text" class="mt-4 text-slate-600 text-center w-full"></p>
-                </div>
+                <button id="btn-start-analyze" onclick="analyzeImage()" class="btn-sage text-white font-bold py-4 rounded-3xl w-full max-w-lg mx-auto shadow-lg mt-auto opacity-50 cursor-not-allowed" disabled>
+                    Mulai Analisis
+                </button>
+            </div>
 
-                <div id="result-container" class="hidden mt-8">
-                    <h2 class="text-2xl font-bold text-slate-800 text-center">Hasil Analisis</h2>
-                    
-                    <div class="mt-4 text-left p-4 bg-red-50 border-l-4 border-red-500 rounded-r-lg">
-                        <p class="text-sm text-red-800">
-                            <span class="font-bold">PERHATIAN:</span> Ini adalah prototipe fungsional. Hasil di bawah ini adalah <span class="font-bold">simulasi realistis</span> dari model ensemble hibrida dan <span class="font-bold">BUKAN DIAGNOSIS MEDIS</span>.
-                        </p>
+            <div id="screen-loading" class="hidden flex-1 flex flex-col items-center justify-center text-center">
+                <div class="relative w-48 h-32 mb-8 rounded-3xl overflow-hidden shadow-md border-4 border-white">
+                    <img id="img-preview-mini" src="" class="w-full h-full object-cover bg-slate-100">
+                </div>
+                <div class="spinner mb-6 mx-auto"></div>
+                <h3 class="text-xl font-bold text-slate-700 mb-2">Memproses Data AI</h3>
+                <p class="text-gray-400 font-medium">Model sedang mencocokkan dataset...</p>
+            </div>
+
+            <div id="screen-result" class="hidden flex-1 flex flex-col">
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+                    <div class="md:col-span-12 p-4 flex items-center gap-4 border-l-4 border-l-amber-400 bg-amber-50 rounded-r-2xl">
+                        <span class="text-2xl">💡</span>
+                        <p class="text-xs md:text-sm text-amber-800 font-medium">Hasil ini berdasarkan analisis AI. Silakan konsultasi ke dokter untuk diagnosis medis resmi.</p>
                     </div>
 
-                    <!-- HASIL UTAMA (ENSEMBLE) -->
-                    <div id="ensemble-verdict" class="mt-4 p-4 bg-slate-50 rounded-lg border">
-                        <h3 class="font-semibold text-slate-800 mb-2">Hasil Akhir (Putusan Ensemble):</h3>
-                        <div class="bg-teal-100 p-4 rounded-lg">
-                            <div class="flex justify-between items-center">
-                                <span id="top-class-name" class="text-xl font-bold text-teal-800"></span>
-                                <span id="top-class-prob" class="text-xl font-semibold text-teal-700"></span>
+                    <div class="md:col-span-7 border p-8 rounded-[32px] flex flex-col justify-between">
+                        <div>
+                            <h3 class="text-slate-400 font-bold text-xs uppercase tracking-wider mb-2">Hasil Putusan Akhir</h3>
+                            <div class="flex items-center gap-3">
+                                <h4 id="verdict-text" class="text-4xl font-extrabold text-slate-800">Menunggu...</h4>
+                                <span id="verdict-badge" class="px-3 py-1 rounded-full bg-emerald-500 text-white text-[10px] font-bold">NORMAL</span>
                             </div>
-                            <p id="top-class-description" class="mt-2 text-teal-900 text-sm"></p>
+                        </div>
+                        <div class="mt-8 flex items-center gap-4">
+                            <div class="relative flex items-center justify-center">
+                                <svg width="80" height="80">
+                                    <circle class="text-slate-100" stroke-width="6" stroke="currentColor" fill="transparent" r="32" cx="40" cy="40" />
+                                    <circle id="circle-confidence" class="text-emerald-500 progress-ring" stroke-width="6" stroke-dasharray="201" stroke-dashoffset="201" stroke-linecap="round" stroke="currentColor" fill="transparent" r="32" cx="40" cy="40" />
+                                </svg>
+                                <span id="confidence-percent" class="absolute text-lg font-bold">0%</span>
+                            </div>
+                            <p class="text-xs font-bold text-slate-700">Tingkat Keyakinan Konsensus</p>
                         </div>
                     </div>
 
-                    <!-- Rincian Analisis Model Hibrida -->
-                    <div id="model-breakdown" class="mt-4">
-                        <h3 class="font-semibold text-slate-800 mb-2 text-center">Rincian Analisis Model Hibrida</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                            <!-- Model A -->
-                            <div class="bg-slate-100 p-3 rounded-lg border">
-                                <h4 class="font-bold text-center text-slate-700">Model A (ResNet)</h4>
-                                <ul id="model-a-results" class="mt-2 space-y-1 text-sm">
-                                    <!-- diisi JS -->
-                                </ul>
-                            </div>
-                            <!-- Model B -->
-                            <div class="bg-slate-100 p-3 rounded-lg border">
-                                <h4 class="font-bold text-center text-slate-700">Model B (EfficientNet)</h4>
-                                <ul id="model-b-results" class="mt-2 space-y-1 text-sm">
-                                    <!-- diisi JS -->
-                                </ul>
-                            </div>
-                            <!-- Model C -->
-                            <div class="bg-slate-100 p-3 rounded-lg border">
-                                <h4 class="font-bold text-center text-slate-700">Model C (ViT)</h4>
-                                <ul id="model-c-results" class="mt-2 space-y-1 text-sm">
-                                    <!-- diisi JS -->
-                                </ul>
-                            </div>
+                    <div class="md:col-span-5 border p-6 rounded-[32px] space-y-5">
+                        <h3 class="font-bold text-slate-700 text-sm">🔍 Akurasi Per Model</h3>
+                        <div>
+                            <div class="flex justify-between text-[10px] font-bold mb-1"><span>ResNet-50</span><span id="resnet-val">0%</span></div>
+                            <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden"><div id="resnet-bar" class="bg-emerald-500 h-full transition-all duration-1000" style="width: 0%"></div></div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-[10px] font-bold mb-1"><span>EfficientNet</span><span id="eff-val">0%</span></div>
+                            <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden"><div id="eff-bar" class="bg-emerald-500 h-full transition-all duration-1000" style="width: 0%"></div></div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-[10px] font-bold mb-1"><span>Vision Transf.</span><span id="vit-val">0%</span></div>
+                            <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden"><div id="vit-bar" class="bg-amber-400 h-full transition-all duration-1000" style="width: 0%"></div></div>
                         </div>
                     </div>
-
-                    <button id="reset-btn" class="mt-6 w-full px-6 py-3 bg-slate-600 text-white font-semibold rounded-lg shadow-md hover:bg-slate-700 transition-colors duration-300">
-                        Analisis Gambar Lain
-                    </button>
                 </div>
+                <button onclick="resetApp()" class="mt-8 bg-slate-800 text-white font-bold py-4 rounded-3xl w-full shadow-lg">Analisis Gambar Lain</button>
             </div>
         </div>
-        <footer class="text-center mt-8 text-slate-500 text-sm">
-            <p>&copy; 2025 Anemiascan</p>
-        </footer>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const uploader = document.getElementById('uploader');
-            const fileInput = document.getElementById('file-upload');
-            const dropZone = uploader.querySelector('label');
+        const inputFile = document.getElementById('input-file');
+        const video = document.getElementById('video');
+        const miniPreview = document.getElementById('img-preview-mini');
+        let selectedBlob = null;
+
+        // 1. Logika Kamera
+        async function startCamera() {
+            document.getElementById('upload-options').classList.add('hidden');
+            document.getElementById('camera-container').classList.remove('hidden');
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+                video.srcObject = stream;
+            } catch (err) { alert("Akses kamera ditolak!"); }
+        }
+
+        function takeSnapshot() {
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
             
-            const previewContainer = document.getElementById('preview-container');
-            const imagePreview = document.getElementById('image-preview');
-            const analyzeBtn = document.getElementById('analyze-btn');
+            canvas.toBlob(blob => {
+                selectedBlob = blob;
+                miniPreview.src = URL.createObjectURL(blob);
+                enableAnalyze();
+            }, 'image/jpeg');
 
-            const loadingContainer = document.getElementById('loading-container');
-            const loadingText = document.getElementById('loading-text');
-            const resultContainer = document.getElementById('result-container');
-            const resetBtn = document.getElementById('reset-btn');
+            video.srcObject.getTracks().forEach(track => track.stop());
+            document.getElementById('camera-container').classList.add('hidden');
+            document.getElementById('upload-options').classList.remove('hidden');
+        }
 
-            // Kontainer Hasil Utama
-            const topClassName = document.getElementById('top-class-name');
-            const topClassProb = document.getElementById('top-class-prob');
-            const topClassDescription = document.getElementById('top-class-description');
-
-            // Kontainer Rincian Model
-            const modelAResults = document.getElementById('model-a-results');
-            const modelBResults = document.getElementById('model-b-results');
-            const modelCResults = document.getElementById('model-c-results');
-
-            let currentFile = null;
-
-            // Database simulasi untuk deteksi anemia
-            const anemiaClassData = {
-                'Anemic': {
-                    description: 'Telapak tangan menunjukkan tanda-tanda anemia, Disarankan untuk konsultasi medis lebih lanjut.'
-                },
-                'Non-Anemic': {
-                    description: 'Telapak tangan tidak menunjukkan tanda-tanda anemia.'
-                }
-            };
-            
-            const classNames = Object.keys(anemiaClassData);
-
-            function handleFile(file) {
-                if (file && file.type.startsWith('image/')) {
-                    currentFile = file; 
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        imagePreview.src = e.target.result;
-                        uploader.classList.add('hidden');
-                        previewContainer.classList.remove('hidden');
-                        resultContainer.classList.add('hidden');
-                    };
-                    reader.readAsDataURL(file);
-                }
+        inputFile.addEventListener('change', (e) => {
+            if (e.target.files[0]) {
+                selectedBlob = e.target.files[0];
+                miniPreview.src = URL.createObjectURL(selectedBlob);
+                enableAnalyze();
             }
-
-            fileInput.addEventListener('change', (e) => {
-                handleFile(e.target.files[0]);
-            });
-
-            dropZone.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                dropZone.classList.add('dragover');
-            });
-
-            dropZone.addEventListener('dragleave', (e) => {
-                e.preventDefault();
-                dropZone.classList.remove('dragover');
-            });
-
-            dropZone.addEventListener('drop', (e) => {
-                e.preventDefault();
-                dropZone.classList.remove('dragover');
-                handleFile(e.dataTransfer.files[0]);
-            });
-
-            analyzeBtn.addEventListener('click', () => {
-                previewContainer.classList.add('hidden');
-                loadingContainer.classList.remove('hidden');
-                
-                loadingText.textContent = 'Menganalisis (Model A: ResNet)...';
-                
-                setTimeout(() => {
-                    loadingText.textContent = 'Menganalisis (Model B: EfficientNet)...';
-                }, 1000);
-                
-                setTimeout(() => {
-                    loadingText.textContent = 'Menganalisis (Model C: ViT)...';
-                }, 2000);
-
-                setTimeout(() => {
-                    loadingText.textContent = 'Menggabungkan hasil (Ensemble)...';
-                }, 3000);
-
-                setTimeout(() => {
-                    const predictions = simulateHybridResults(currentFile);
-                    displayResults(predictions);
-                }, 3500);
-            });
-            
-            // Fungsi seed acak yang konsisten
-            function seededRandom(seed) {
-                let s = Math.sin(seed) * 10000;
-                return s - Math.floor(s);
-            }
-
-            // Fungsi untuk menghasilkan hasil simulasi hibrida yang KONSISTEN
-            function simulateHybridResults(file) {
-                let results = {};
-                const fileSize = file.size;
-                
-                // 1. Tentukan hasil ENSEMBLE
-                const ensembleTopIndex = fileSize % 2; // 0 = Non-Anemic, 1 = Anemic
-                let ensembleTopProb = seededRandom(fileSize % 100) * (0.98 - 0.85) + 0.85;
-                results.ensemble = generatePredictionList(ensembleTopIndex, ensembleTopProb, fileSize + 1);
-                
-                // 2. Model A
-                let modelAProb = ensembleTopProb * (seededRandom(fileSize + 2) * (1.0 - 0.9) + 0.9);
-                results.modelA = generatePredictionList(ensembleTopIndex, modelAProb, fileSize + 2);
-                
-                // 3. Model B
-                let modelBProb = ensembleTopProb * (seededRandom(fileSize + 3) * (1.0 - 0.88) + 0.88);
-                results.modelB = generatePredictionList(ensembleTopIndex, modelBProb, fileSize + 3);
-
-                // 4. Model C (kadang salah)
-                let modelCSeed = seededRandom(fileSize + 4);
-                let modelCTopIndex = ensembleTopIndex;
-                let modelCProb = ensembleTopProb * 0.7;
-                if (modelCSeed < 0.3) {
-                    modelCTopIndex = 1 - ensembleTopIndex; // flip
-                    modelCProb = seededRandom(fileSize + 5) * (0.6 - 0.4) + 0.4;
-                }
-                results.modelC = generatePredictionList(modelCTopIndex, modelCProb, fileSize + 4);
-
-                return results;
-            }
-
-            function generatePredictionList(topIndex, topProb, seed) {
-                let list = [];
-                let remainingProb = 1.0 - topProb;
-                for (let i = 0; i < 2; i++) {
-                    let prob = (i === topIndex) ? topProb : remainingProb;
-                    list.push({ className: classNames[i], probability: prob });
-                }
-                list.sort((a, b) => b.probability - a.probability);
-                return list;
-            }
-
-            function displayResults(predictions) {
-                const topPrediction = predictions.ensemble[0];
-                topClassName.textContent = topPrediction.className;
-                topClassProb.textContent = `${(topPrediction.probability * 100).toFixed(2)}%`;
-                topClassDescription.textContent = anemiaClassData[topPrediction.className].description;
-
-                displayModelBreakdown(modelAResults, predictions.modelA);
-                displayModelBreakdown(modelBResults, predictions.modelB);
-                displayModelBreakdown(modelCResults, predictions.modelC);
-
-                loadingContainer.classList.add('hidden');
-                resultContainer.classList.remove('hidden');
-            }
-
-            function displayModelBreakdown(ulElement, modelPredictions) {
-                ulElement.innerHTML = '';
-                modelPredictions.forEach((pred, index) => {
-                    const li = document.createElement('li');
-                    li.className = `flex justify-between ${index === 0 ? 'font-bold text-slate-900' : 'text-slate-600'}`;
-                    li.innerHTML = `
-                        <span>${pred.className}</span>
-                        <span>(${(pred.probability * 100).toFixed(1)}%)</span>
-                    `;
-                    ulElement.appendChild(li);
-                });
-            }
-
-            resetBtn.addEventListener('click', () => {
-                resultContainer.classList.add('hidden');
-                uploader.classList.remove('hidden');
-                fileInput.value = '';
-                imagePreview.src = '';
-                currentFile = null;
-            });
-
         });
+
+        function enableAnalyze() {
+            const btn = document.getElementById('btn-start-analyze');
+            btn.disabled = false;
+            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+
+        // 2. Logika Integrasi Python (ML)
+        async function analyzeImage() {
+            document.getElementById('screen-upload').classList.add('hidden');
+            document.getElementById('screen-loading').classList.remove('hidden');
+
+            const formData = new FormData();
+            formData.append('file', selectedBlob);
+
+            try {
+                const response = await fetch('http://localhost:5000/predict', { method: 'POST', body: formData });
+                const data = await response.json();
+
+                if (data.status === "invalid") {
+                    alert("⚠️ ERROR: Gambar bukan telapak tangan! Harap ambil foto telapak tangan yang jelas.");
+                    resetApp();
+                    return;
+                }
+
+                updateUI(data);
+            } catch (err) {
+                alert("Gagal terhubung ke server Python. Pastikan Flask berjalan.");
+                resetApp();
+            }
+        }
+
+        function updateUI(data) {
+            document.getElementById('screen-loading').classList.add('hidden');
+            document.getElementById('screen-result').classList.remove('hidden');
+
+            document.getElementById('verdict-text').textContent = data.prediction;
+            document.getElementById('confidence-percent').textContent = data.confidence + "%";
+            
+            // Progress Ring
+            const circle = document.getElementById('circle-confidence');
+            const offset = 201 - (201 * data.confidence) / 100;
+            circle.style.strokeDashoffset = offset;
+
+            // Bar Akurasi Model (Data dari Python)
+            document.getElementById('resnet-val').textContent = data.details.resnet + "%";
+            document.getElementById('resnet-bar').style.width = data.details.resnet + "%";
+            
+            document.getElementById('eff-val').textContent = data.details.efficientnet + "%";
+            document.getElementById('eff-bar').style.width = data.details.efficientnet + "%";
+
+            document.getElementById('vit-val').textContent = data.details.vit + "%";
+            document.getElementById('vit-bar').style.width = data.details.vit + "%";
+        }
+
+        function resetApp() {
+            location.reload();
+        }
     </script>
 </body>
 </html>
